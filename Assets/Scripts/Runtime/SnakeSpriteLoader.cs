@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using System.IO;
 using System.Collections.Generic;
 
@@ -10,6 +11,11 @@ public static class SnakeSpriteLoader
 {
     // 精灵缓存，避免重复加载
     private static Dictionary<string, Sprite> spriteCache = new Dictionary<string, Sprite>();
+
+    static SnakeSpriteLoader()
+    {
+        SceneManager.sceneUnloaded += _ => spriteCache.Clear();
+    }
 
     /// <summary>
     /// 加载精灵 - 编辑器下使用 AssetDatabase，构建版本使用 Resources.Load

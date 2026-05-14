@@ -12,14 +12,13 @@ public class InputManager : MonoBehaviour
 
     private Vector2 touchStartPos;
     private bool isTouchInput;
-    private float minSwipeDistance = 50f;
+    private readonly float minSwipeDistance = 50f;
     private bool hasTouchscreen;
 
     private void Awake()
     {
-        snakeController = FindObjectOfType<SnakeController>();
-        gameManager = FindObjectOfType<GameManager>();
-        // 缓存触控设备状态，避免每帧检查
+        snakeController = FindAnyObjectByType<SnakeController>();
+        gameManager = FindAnyObjectByType<GameManager>();
         hasTouchscreen = Touchscreen.current != null;
     }
 
@@ -30,8 +29,6 @@ public class InputManager : MonoBehaviour
             Debug.LogError("[InputManager] gameManager is NULL!");
             return;
         }
-
-        Debug.Log($"[InputManager] Update - CurrentState: {gameManager.CurrentState}, snakeController: {(snakeController != null ? "OK" : "NULL")}");
 
         // 暂停切换在任何状态下都可用
         HandlePauseToggle();
@@ -60,23 +57,23 @@ public class InputManager : MonoBehaviour
     /// </summary>
     private void HandleKeyboardInput()
     {
-        if (Keyboard.current == null) return;
+        if (Keyboard.current == null || snakeController == null) return;
 
         if (Keyboard.current.wKey.wasPressedThisFrame || Keyboard.current.upArrowKey.wasPressedThisFrame)
         {
-            snakeController?.SetDirection(Vector2Int.up);
+            snakeController.SetDirection(Vector2Int.up);
         }
         else if (Keyboard.current.sKey.wasPressedThisFrame || Keyboard.current.downArrowKey.wasPressedThisFrame)
         {
-            snakeController?.SetDirection(Vector2Int.down);
+            snakeController.SetDirection(Vector2Int.down);
         }
         else if (Keyboard.current.aKey.wasPressedThisFrame || Keyboard.current.leftArrowKey.wasPressedThisFrame)
         {
-            snakeController?.SetDirection(Vector2Int.left);
+            snakeController.SetDirection(Vector2Int.left);
         }
         else if (Keyboard.current.dKey.wasPressedThisFrame || Keyboard.current.rightArrowKey.wasPressedThisFrame)
         {
-            snakeController?.SetDirection(Vector2Int.right);
+            snakeController.SetDirection(Vector2Int.right);
         }
     }
 
@@ -85,7 +82,7 @@ public class InputManager : MonoBehaviour
     /// </summary>
     private void HandleTouchInput()
     {
-        if (!hasTouchscreen || Touchscreen.current == null) return;
+        if (!hasTouchscreen || Touchscreen.current == null || snakeController == null) return;
 
         if (Touchscreen.current.primaryTouch.press.wasPressedThisFrame)
         {
@@ -106,17 +103,17 @@ public class InputManager : MonoBehaviour
             {
                 // 水平滑动
                 if (swipeDelta.x > 0)
-                    snakeController?.SetDirection(Vector2Int.right);
+                    snakeController.SetDirection(Vector2Int.right);
                 else
-                    snakeController?.SetDirection(Vector2Int.left);
+                    snakeController.SetDirection(Vector2Int.left);
             }
             else
             {
                 // 垂直滑动
                 if (swipeDelta.y > 0)
-                    snakeController?.SetDirection(Vector2Int.up);
+                    snakeController.SetDirection(Vector2Int.up);
                 else
-                    snakeController?.SetDirection(Vector2Int.down);
+                    snakeController.SetDirection(Vector2Int.down);
             }
 
             isTouchInput = false;

@@ -41,30 +41,24 @@ public class UIManager : MonoBehaviour
 
     private void Awake()
     {
-        gameManager = FindObjectOfType<GameManager>();
-        scoreManager = FindObjectOfType<ScoreManager>();
+        gameManager = FindAnyObjectByType<GameManager>();
+        scoreManager = FindAnyObjectByType<ScoreManager>();
         EnsureDefaultUI();
-    }
 
-    private void Start()
-    {
-        // 注册游戏状态变化事件
+        // 在 Awake 注册事件，确保 GameManager.Start 触发 SetState 时已订阅
         if (gameManager != null)
-        {
             gameManager.OnGameStateChanged += OnGameStateChanged;
-        }
 
-        // 注册分数变化事件
         if (scoreManager != null)
         {
             scoreManager.OnScoreChanged += OnScoreChanged;
             scoreManager.OnHighScoreChanged += OnHighScoreChanged;
         }
+    }
 
-        // 注册按钮事件
+    private void Start()
+    {
         RegisterButtonEvents();
-
-        // 初始显示主菜单
         ShowMainMenu();
     }
 
@@ -233,7 +227,7 @@ public class UIManager : MonoBehaviour
         if (mainMenuPanel != null && gamePanel != null && pausePanel != null && gameOverPanel != null)
             return;
 
-        Canvas canvas = FindObjectOfType<Canvas>();
+        Canvas canvas = FindAnyObjectByType<Canvas>();
         if (canvas == null)
         {
             GameObject canvasObject = new GameObject("Snake UI Canvas");
@@ -244,7 +238,7 @@ public class UIManager : MonoBehaviour
             canvasObject.AddComponent<GraphicRaycaster>();
         }
 
-        if (FindObjectOfType<UnityEngine.EventSystems.EventSystem>() == null)
+        if (FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
         {
             GameObject eventSystem = new GameObject("EventSystem");
             eventSystem.AddComponent<UnityEngine.EventSystems.EventSystem>();

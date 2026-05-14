@@ -40,7 +40,7 @@ public static class SnakeGameBootstrap
 
     private static T EnsureComponent<T>(GameObject root) where T : Component
     {
-        T existing = Object.FindObjectOfType<T>();
+        T existing = Object.FindAnyObjectByType<T>();
         if (existing != null)
             return existing;
 

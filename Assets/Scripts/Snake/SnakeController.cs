@@ -42,7 +42,7 @@ public class SnakeController : MonoBehaviour
 
     private void Awake()
     {
-        gridManager = FindObjectOfType<GridManager>();
+        gridManager = FindAnyObjectByType<GridManager>();
         currentMoveInterval = baseMoveInterval;
         EnsureDefaults();
     }
@@ -55,13 +55,9 @@ public class SnakeController : MonoBehaviour
     private void Update()
     {
         if (!isMoving || isDead)
-        {
-            Debug.Log($"[SnakeController] Update skipped - isMoving: {isMoving}, isDead: {isDead}, Time.timeScale: {Time.timeScale}");
             return;
-        }
 
         moveTimer += Time.deltaTime;
-        Debug.Log($"[SnakeController] Update - moveTimer: {moveTimer}, currentMoveInterval: {currentMoveInterval}, deltaTime: {Time.deltaTime}");
         if (moveTimer >= currentMoveInterval)
         {
             moveTimer = 0;
@@ -121,7 +117,8 @@ public class SnakeController : MonoBehaviour
 
         // 更新位置
         UpdateSegmentPositions();
-        UpdateOccupiedCells();
+        RefreshAllOccupiedCells();
+        lastTailPos = segments[segments.Count - 1].GridPosition;
     }
 
     /// <summary>
@@ -129,7 +126,6 @@ public class SnakeController : MonoBehaviour
     /// </summary>
     public void StartMoving()
     {
-        Debug.Log("[SnakeController] StartMoving() called - setting isMoving = true");
         isMoving = true;
     }
 
@@ -209,7 +205,8 @@ public class SnakeController : MonoBehaviour
         segments.Add(bodySegment);
 
         UpdateSegmentPositions();
-        UpdateOccupiedCells();
+        RefreshAllOccupiedCells();
+        lastTailPos = tailPos;
 
         foodEaten++;
 
@@ -234,19 +231,33 @@ public class SnakeController : MonoBehaviour
         }
     }
 
+    private Vector2Int lastTailPos;
+
     /// <summary>
-    /// 更新网格占用状态（仅更新蛇身占用，保留食物占用标记）
+    /// 更新网格占用状态 — 仅更新变化的格子（蛇头新位置 + 蛇尾旧位置）
     /// </summary>
     private void UpdateOccupiedCells()
     {
-        // 先清除所有蛇身占用的格子（注意：不能直接 ClearOccupiedCells，否则会清除食物标记）
-        // 先获取所有蛇身节段当前占用的位置，然后清除这些位置
-        foreach (var segment in segments)
-        {
-            gridManager.SetCellOccupied(segment.GridPosition.x, segment.GridPosition.y, false);
-        }
-        
-        // 重新标记蛇身节段的新位置
+        if (segments.Count == 0)
+            return;
+
+        // 标记蛇头新位置为占用
+        Vector2Int headPos = segments[0].GridPosition;
+        gridManager.SetCellOccupied(headPos.x, headPos.y, true);
+
+        // 标记旧蛇尾位置为空（蛇尾已移走）
+        gridManager.SetCellOccupied(lastTailPos.x, lastTailPos.y, false);
+
+        // 记录当前蛇尾位置供下次使用
+        lastTailPos = segments[segments.Count - 1].GridPosition;
+    }
+
+    /// <summary>
+    /// 全量刷新占用状态 — 仅在初始化/重置/生长时调用
+    /// </summary>
+    private void RefreshAllOccupiedCells()
+    {
+        gridManager.ClearOccupiedCells();
         foreach (var segment in segments)
         {
             gridManager.SetCellOccupied(segment.GridPosition.x, segment.GridPosition.y, true);
@@ -301,6 +312,7 @@ public class SnakeController : MonoBehaviour
     private GameObject CreateSegmentPrefab(string prefabName, Sprite sprite)
     {
         GameObject prefab = new GameObject(prefabName);
+        prefab.hideFlags = HideFlags.HideAndDontSave;
         prefab.SetActive(false);
         SpriteRenderer renderer = prefab.AddComponent<SpriteRenderer>();
         renderer.sprite = sprite;

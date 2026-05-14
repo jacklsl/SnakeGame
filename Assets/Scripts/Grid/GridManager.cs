@@ -14,6 +14,7 @@ public class GridManager : MonoBehaviour
 
     private Vector2 originPosition;
     private bool[,] occupiedCells;
+    private System.Collections.Generic.List<Vector2Int> emptyCellsBuffer = new System.Collections.Generic.List<Vector2Int>();
 
     public int GridWidth => gridWidth;
     public int GridHeight => gridHeight;
@@ -158,20 +159,18 @@ public class GridManager : MonoBehaviour
     /// <summary>
     /// 获取所有空白（未占用）的网格位置
     /// </summary>
-    public Vector2Int[] GetEmptyCells()
+    public System.Collections.Generic.List<Vector2Int> GetEmptyCells()
     {
-        System.Collections.Generic.List<Vector2Int> emptyCells = new System.Collections.Generic.List<Vector2Int>();
+        emptyCellsBuffer.Clear();
         for (int x = 0; x < gridWidth; x++)
         {
             for (int y = 0; y < gridHeight; y++)
             {
                 if (!occupiedCells[x, y])
-                {
-                    emptyCells.Add(new Vector2Int(x, y));
-                }
+                    emptyCellsBuffer.Add(new Vector2Int(x, y));
             }
         }
-        return emptyCells.ToArray();
+        return emptyCellsBuffer;
     }
 
     /// <summary>

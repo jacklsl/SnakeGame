@@ -35,10 +35,10 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        snakeController = FindObjectOfType<SnakeController>();
-        foodSpawner = FindObjectOfType<FoodSpawner>();
-        scoreManager = FindObjectOfType<ScoreManager>();
-        uiManager = FindObjectOfType<UIManager>();
+        snakeController = FindAnyObjectByType<SnakeController>();
+        foodSpawner = FindAnyObjectByType<FoodSpawner>();
+        scoreManager = FindAnyObjectByType<ScoreManager>();
+        uiManager = FindAnyObjectByType<UIManager>();
     }
 
     private void Start()
@@ -227,29 +227,20 @@ public class GameManager : MonoBehaviour
         // AudioManager.PlayGameOverSound();
     }
 
-    private string[] cachedSceneNames;
-    private bool sceneNamesCached;
+    private System.Collections.Generic.HashSet<string> sceneNameSet;
 
     private bool SceneExists(string sceneName)
     {
-        if (!sceneNamesCached)
+        if (sceneNameSet == null)
         {
             int sceneCount = SceneManager.sceneCountInBuildSettings;
-            cachedSceneNames = new string[sceneCount];
+            sceneNameSet = new System.Collections.Generic.HashSet<string>(sceneCount);
             for (int i = 0; i < sceneCount; i++)
             {
                 string path = SceneUtility.GetScenePathByBuildIndex(i);
-                cachedSceneNames[i] = System.IO.Path.GetFileNameWithoutExtension(path);
+                sceneNameSet.Add(System.IO.Path.GetFileNameWithoutExtension(path));
             }
-            sceneNamesCached = true;
         }
-
-        for (int i = 0; i < cachedSceneNames.Length; i++)
-        {
-            if (cachedSceneNames[i] == sceneName)
-                return true;
-        }
-
-        return false;
+        return sceneNameSet.Contains(sceneName);
     }
 }
