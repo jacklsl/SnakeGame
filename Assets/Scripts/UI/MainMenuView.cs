@@ -90,13 +90,28 @@ public class MainMenuView : MonoBehaviour
         img.color = new Color(0.18f, 0.56f, 0.31f);
         Button btn = go.AddComponent<Button>();
 
-        TextMeshProUGUI txt = CreateText("Label", label, 30, TextAlignmentOptions.Center);
+        TextMeshProUGUI txt = CreateTextOnParent("Label", label, 30, TextAlignmentOptions.Center, go.transform);
         txt.rectTransform.anchorMin = Vector2.zero;
         txt.rectTransform.anchorMax = Vector2.one;
         txt.rectTransform.offsetMin = Vector2.zero;
         txt.rectTransform.offsetMax = Vector2.zero;
+        txt.raycastTarget = false;
 
         return btn;
+    }
+
+    private TextMeshProUGUI CreateTextOnParent(string name, string value, int fontSize,
+        TextAlignmentOptions align, Transform parent)
+    {
+        GameObject go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        TextMeshProUGUI text = go.AddComponent<TextMeshProUGUI>();
+        text.text = value;
+        text.fontSize = fontSize;
+        text.color = Color.white;
+        text.alignment = align;
+        text.enableWordWrapping = false;
+        return text;
     }
 
     private void SetRect(RectTransform rect, float anchorMinX, float anchorMinY,
