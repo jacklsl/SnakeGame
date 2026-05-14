@@ -39,11 +39,6 @@ public class SnakeSegment : MonoBehaviour
         }
     }
 
-    public void SetRotation(float angle)
-    {
-        transform.rotation = Quaternion.Euler(0f, 0f, angle);
-    }
-
     public void FitToCell(float cellSize, float padding = 0.92f)
     {
         if (spriteRenderer == null || spriteRenderer.sprite == null)
