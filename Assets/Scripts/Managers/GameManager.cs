@@ -1,175 +1,75 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 游戏状态枚举
-/// </summary>
-public enum GameState
-{
-    Ready,      // 待开始
-    Playing,    // 进行中
-    Paused,     // 暂停
-    GameOver    // 结束
-}
-
-/// <summary>
-/// 游戏管理器 - 管理游戏状态和整体流程
+/// 游戏管理器 — 游戏状态机，通过 EventBus 广播状态变化
+/// 通过 GameServices 获取依赖
 /// </summary>
 public class GameManager : MonoBehaviour
 {
-    [Header("场景名称")]
-    [SerializeField] private string mainMenuSceneName = "MainMenu";
-    [SerializeField] private string gameSceneName = "Game";
-
     private GameState currentState = GameState.Ready;
-
-    private SnakeController snakeController;
-    private FoodSpawner foodSpawner;
-    private ScoreManager scoreManager;
-    private UIManager uiManager;
 
     public GameState CurrentState => currentState;
 
-    // 事件
-    public System.Action<GameState> OnGameStateChanged;
-
     private void Awake()
     {
-        snakeController = FindAnyObjectByType<SnakeController>();
-        foodSpawner = FindAnyObjectByType<FoodSpawner>();
-        scoreManager = FindAnyObjectByType<ScoreManager>();
-        uiManager = FindAnyObjectByType<UIManager>();
+        GameServices.Register(this);
     }
 
     private void Start()
     {
-        // 注册事件
-        if (snakeController != null)
-        {
-            snakeController.OnFoodEaten += OnFoodEaten;
-            snakeController.OnDeath += OnSnakeDeath;
-            snakeController.OnSnakeMoved += OnSnakeMoved;
-        }
-
-        // 初始状态为Ready
+        EventBus.Subscribe<FoodEatenEvent>(OnFoodEaten);
+        EventBus.Subscribe<SnakeDiedEvent>(OnSnakeDied);
         SetState(GameState.Ready);
     }
 
     private void OnDestroy()
     {
-        if (snakeController != null)
-        {
-            snakeController.OnFoodEaten -= OnFoodEaten;
-            snakeController.OnDeath -= OnSnakeDeath;
-            snakeController.OnSnakeMoved -= OnSnakeMoved;
-        }
+        EventBus.Unsubscribe<FoodEatenEvent>(OnFoodEaten);
+        EventBus.Unsubscribe<SnakeDiedEvent>(OnSnakeDied);
+        GameServices.Unregister<GameManager>();
     }
 
-    /// <summary>
-    /// 设置游戏状态
-    /// </summary>
     public void SetState(GameState newState)
     {
         currentState = newState;
-        OnGameStateChanged?.Invoke(currentState);
+        EventBus.Publish(new GameStateChangedEvent { State = currentState });
 
-        switch (currentState)
-        {
-            case GameState.Ready:
-                Time.timeScale = 1f;
-                break;
-            case GameState.Playing:
-                Time.timeScale = 1f;
-                break;
-            case GameState.Paused:
-                Time.timeScale = 0f;
-                break;
-            case GameState.GameOver:
-                Time.timeScale = 0f;
-                break;
-        }
+        Time.timeScale = (currentState == GameState.Paused || currentState == GameState.GameOver) ? 0f : 1f;
     }
 
-    /// <summary>
-    /// 开始游戏
-    /// </summary>
     public void StartGame()
     {
-        Debug.Log("[GameManager] StartGame() called - currentState: " + currentState);
-
-        // 重置分数
-        if (scoreManager != null)
-            scoreManager.ResetScore();
-        else
-            Debug.LogError("[GameManager] scoreManager is NULL!");
-
-        // 重置蛇
-        if (snakeController != null)
-        {
-            Debug.Log("[GameManager] Calling snakeController.ResetSnake() and StartMoving()");
-            snakeController.ResetSnake();
-            snakeController.StartMoving();
-        }
-        else
-        {
-            Debug.LogError("[GameManager] snakeController is NULL!");
-        }
-
-        // 重置食物
-        if (foodSpawner != null)
-            foodSpawner.ResetFood();
-        else
-            Debug.LogError("[GameManager] foodSpawner is NULL!");
-
+        GameServices.Get<ScoreManager>()?.ResetScore();
+        GameServices.Get<SnakeController>()?.ResetSnake();
+        GameServices.Get<SnakeController>()?.StartMoving();
+        GameServices.Get<FoodSpawner>()?.ResetFood();
         SetState(GameState.Playing);
-        Debug.Log("[GameManager] StartGame() completed - new state: " + currentState);
     }
 
-    /// <summary>
-    /// 暂停游戏
-    /// </summary>
     public void PauseGame()
     {
         if (currentState == GameState.Playing)
-        {
             SetState(GameState.Paused);
-        }
     }
 
-    /// <summary>
-    /// 继续游戏
-    /// </summary>
     public void ResumeGame()
     {
         if (currentState == GameState.Paused)
-        {
             SetState(GameState.Playing);
-        }
     }
 
-    /// <summary>
-    /// 重新开始游戏
-    /// </summary>
     public void RestartGame()
     {
         StartGame();
     }
 
-    /// <summary>
-    /// 返回主菜单
-    /// </summary>
     public void GoToMainMenu()
     {
         Time.timeScale = 1f;
-        if (SceneExists(mainMenuSceneName))
-            SceneManager.LoadScene(mainMenuSceneName);
-        else
-            SetState(GameState.Ready);
+        GameServices.Get<SnakeController>()?.ResetSnake();
+        SetState(GameState.Ready);
     }
 
-    /// <summary>
-    /// 退出游戏
-    /// </summary>
     public void QuitGame()
     {
         Time.timeScale = 1f;
@@ -180,67 +80,13 @@ public class GameManager : MonoBehaviour
 #endif
     }
 
-    /// <summary>
-    /// 加载游戏场景
-    /// </summary>
-    public void LoadGameScene()
+    private void OnFoodEaten(FoodEatenEvent evt)
     {
-        Time.timeScale = 1f;
-        if (SceneExists(gameSceneName))
-            SceneManager.LoadScene(gameSceneName);
-        else
-            StartGame();
+        GameServices.Get<ScoreManager>()?.AddScore(1);
     }
 
-    /// <summary>
-    /// 蛇移动回调 - 检测是否吃到食物
-    /// </summary>
-    private void OnSnakeMoved(Vector2Int headPos)
-    {
-        if (foodSpawner != null && foodSpawner.IsFoodAt(headPos))
-        {
-            foodSpawner.EatFood();
-        }
-    }
-
-    /// <summary>
-    /// 吃到食物回调
-    /// </summary>
-    private void OnFoodEaten()
-    {
-        // 增加分数
-        if (scoreManager != null)
-            scoreManager.AddScore(1);
-
-        // 播放音效（可选）
-        // AudioManager.PlayEatSound();
-    }
-
-    /// <summary>
-    /// 蛇死亡回调
-    /// </summary>
-    private void OnSnakeDeath()
+    private void OnSnakeDied(SnakeDiedEvent evt)
     {
         SetState(GameState.GameOver);
-
-        // 播放音效（可选）
-        // AudioManager.PlayGameOverSound();
-    }
-
-    private System.Collections.Generic.HashSet<string> sceneNameSet;
-
-    private bool SceneExists(string sceneName)
-    {
-        if (sceneNameSet == null)
-        {
-            int sceneCount = SceneManager.sceneCountInBuildSettings;
-            sceneNameSet = new System.Collections.Generic.HashSet<string>(sceneCount);
-            for (int i = 0; i < sceneCount; i++)
-            {
-                string path = SceneUtility.GetScenePathByBuildIndex(i);
-                sceneNameSet.Add(System.IO.Path.GetFileNameWithoutExtension(path));
-            }
-        }
-        return sceneNameSet.Contains(sceneName);
     }
 }

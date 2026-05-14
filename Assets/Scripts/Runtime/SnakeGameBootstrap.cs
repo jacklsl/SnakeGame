@@ -11,13 +11,40 @@ public static class SnakeGameBootstrap
         if (root == null)
             root = new GameObject("Snake Game Runtime");
 
-        EnsureComponent<GridManager>(root);
-        EnsureComponent<SnakeController>(root);
-        EnsureComponent<FoodSpawner>(root);
+        // 加载配置
+        GameConfig config = Resources.Load<GameConfig>("Config/GameConfig");
+        if (config == null)
+            config = ScriptableObject.CreateInstance<GameConfig>();
+
+        // 按依赖顺序添加组件
+        GridManager gridManager = EnsureComponent<GridManager>(root);
+        InjectConfig(gridManager, config);
+
+        SnakeController snakeController = EnsureComponent<SnakeController>(root);
+        InjectConfig(snakeController, config);
+
+        FoodSpawner foodSpawner = EnsureComponent<FoodSpawner>(root);
+        InjectConfig(foodSpawner, config);
+
         EnsureComponent<ScoreManager>(root);
         EnsureComponent<GameManager>(root);
         EnsureComponent<InputManager>(root);
         EnsureComponent<UIManager>(root);
+
+        // GridManager 渲染子组件
+        if (root.GetComponent<GridBackgroundRenderer>() == null)
+            root.AddComponent<GridBackgroundRenderer>();
+        if (root.GetComponent<GridWallRenderer>() == null)
+            root.AddComponent<GridWallRenderer>();
+    }
+
+    private static void InjectConfig<T>(T component, GameConfig config) where T : Component
+    {
+        var field = typeof(T).GetField("config",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Public);
+        if (field != null && field.FieldType == typeof(GameConfig))
+            field.SetValue(component, config);
     }
 
     private static void EnsureCamera()
@@ -43,7 +70,6 @@ public static class SnakeGameBootstrap
         T existing = Object.FindAnyObjectByType<T>();
         if (existing != null)
             return existing;
-
         return root.AddComponent<T>();
     }
 }

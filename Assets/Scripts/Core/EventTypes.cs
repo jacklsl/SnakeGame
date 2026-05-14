@@ -1,4 +1,15 @@
 /// <summary>
+/// 游戏状态枚举
+/// </summary>
+public enum GameState
+{
+    Ready,
+    Playing,
+    Paused,
+    GameOver
+}
+
+/// <summary>
 /// 事件类型定义 — 所有事件均为 struct，零 GC 分配
 /// </summary>
 

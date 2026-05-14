@@ -2,8 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// 输入管理器 - 处理键盘和触控输入
-/// 使用 Unity 新输入系统（Input System）
+/// 输入管理器 — 处理键盘和触控输入
 /// </summary>
 public class InputManager : MonoBehaviour
 {
@@ -13,27 +12,19 @@ public class InputManager : MonoBehaviour
     private Vector2 touchStartPos;
     private bool isTouchInput;
     private readonly float minSwipeDistance = 50f;
-    private bool hasTouchscreen;
 
     private void Awake()
     {
-        snakeController = FindAnyObjectByType<SnakeController>();
-        gameManager = FindAnyObjectByType<GameManager>();
-        hasTouchscreen = Touchscreen.current != null;
+        snakeController = GameServices.Get<SnakeController>();
+        gameManager = GameServices.Get<GameManager>();
     }
 
     private void Update()
     {
-        if (gameManager == null)
-        {
-            Debug.LogError("[InputManager] gameManager is NULL!");
-            return;
-        }
+        if (gameManager == null) return;
 
-        // 暂停切换在任何状态下都可用
         HandlePauseToggle();
 
-        // 只有 Playing 状态下才处理方向输入
         if (gameManager.CurrentState == GameState.Playing)
         {
             HandleKeyboardInput();
@@ -43,8 +34,7 @@ public class InputManager : MonoBehaviour
 
     private void HandlePauseToggle()
     {
-        if (Keyboard.current == null || !Keyboard.current.escapeKey.wasPressedThisFrame)
-            return;
+        if (Keyboard.current == null || !Keyboard.current.escapeKey.wasPressedThisFrame) return;
 
         if (gameManager.CurrentState == GameState.Playing)
             gameManager.PauseGame();
@@ -52,37 +42,23 @@ public class InputManager : MonoBehaviour
             gameManager.ResumeGame();
     }
 
-    /// <summary>
-    /// 处理键盘输入（WASD / 方向键）
-    /// </summary>
     private void HandleKeyboardInput()
     {
         if (Keyboard.current == null || snakeController == null) return;
 
         if (Keyboard.current.wKey.wasPressedThisFrame || Keyboard.current.upArrowKey.wasPressedThisFrame)
-        {
             snakeController.SetDirection(Vector2Int.up);
-        }
         else if (Keyboard.current.sKey.wasPressedThisFrame || Keyboard.current.downArrowKey.wasPressedThisFrame)
-        {
             snakeController.SetDirection(Vector2Int.down);
-        }
         else if (Keyboard.current.aKey.wasPressedThisFrame || Keyboard.current.leftArrowKey.wasPressedThisFrame)
-        {
             snakeController.SetDirection(Vector2Int.left);
-        }
         else if (Keyboard.current.dKey.wasPressedThisFrame || Keyboard.current.rightArrowKey.wasPressedThisFrame)
-        {
             snakeController.SetDirection(Vector2Int.right);
-        }
     }
 
-    /// <summary>
-    /// 处理触控输入（滑动屏幕控制方向）
-    /// </summary>
     private void HandleTouchInput()
     {
-        if (!hasTouchscreen || Touchscreen.current == null || snakeController == null) return;
+        if (Touchscreen.current == null || snakeController == null) return;
 
         if (Touchscreen.current.primaryTouch.press.wasPressedThisFrame)
         {
@@ -95,26 +71,12 @@ public class InputManager : MonoBehaviour
             Vector2 touchEndPos = Touchscreen.current.primaryTouch.position.ReadValue();
             Vector2 swipeDelta = touchEndPos - touchStartPos;
 
-            if (swipeDelta.magnitude < minSwipeDistance)
-                return;
+            if (swipeDelta.magnitude < minSwipeDistance) return;
 
-            // 判断滑动方向
             if (Mathf.Abs(swipeDelta.x) > Mathf.Abs(swipeDelta.y))
-            {
-                // 水平滑动
-                if (swipeDelta.x > 0)
-                    snakeController.SetDirection(Vector2Int.right);
-                else
-                    snakeController.SetDirection(Vector2Int.left);
-            }
+                snakeController.SetDirection(swipeDelta.x > 0 ? Vector2Int.right : Vector2Int.left);
             else
-            {
-                // 垂直滑动
-                if (swipeDelta.y > 0)
-                    snakeController.SetDirection(Vector2Int.up);
-                else
-                    snakeController.SetDirection(Vector2Int.down);
-            }
+                snakeController.SetDirection(swipeDelta.y > 0 ? Vector2Int.up : Vector2Int.down);
 
             isTouchInput = false;
         }
