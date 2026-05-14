@@ -78,16 +78,13 @@ public class SpriteGeneratorEditor : EditorWindow
         Directory.CreateDirectory(path);
 
         GenerateSnakeHead(path);
-        GenerateBodyStraight(path);
-        GenerateBodyCorner(path);
-        GenerateSnakeTail(path);
         GenerateSnakeBody(path);
         GenerateFood(path);
         GenerateWall(path);
         GenerateBackground(path);
 
         AssetDatabase.Refresh();
-        Debug.Log("All sprites generated (head, straight, corner, tail, body, food, wall, bg)!");
+        Debug.Log("所有卡通风格素材生成完成！");
     }
 
     private Texture2D CreateTexture(int width, int height)
@@ -292,149 +289,6 @@ public class SpriteGeneratorEditor : EditorWindow
         tex.SetPixels(pixels);
         tex.Apply();
         File.WriteAllBytes(path + "SnakeBody.png", tex.EncodeToPNG());
-        Object.DestroyImmediate(tex);
-    }
-
-    private void GenerateBodyStraight(string path)
-    {
-        Texture2D tex = CreateTexture(pixelSize, pixelSize);
-        Color[] pixels = new Color[pixelSize * pixelSize];
-
-        int half = pixelSize / 2;
-        float bodyHalfH = pixelSize * 0.22f;
-        float cornerR = pixelSize * 0.12f;
-
-        for (int y = 0; y < pixelSize; y++)
-        {
-            for (int x = 0; x < pixelSize; x++)
-            {
-                float cy = Mathf.Abs(y - half);
-                bool inside = false;
-
-                if (x < cornerR || x >= pixelSize - cornerR)
-                {
-                    float cornerCx = (x < cornerR) ? cornerR - x : x - (pixelSize - cornerR - 1);
-                    float cornerCy = cy - (bodyHalfH - cornerR);
-                    if (cornerCy < 0f)
-                        inside = cy <= bodyHalfH;
-                    else
-                        inside = (cornerCx * cornerCx + cornerCy * cornerCy) <= (cornerR * cornerR);
-                }
-                else
-                {
-                    inside = cy <= bodyHalfH;
-                }
-
-                if (inside)
-                {
-                    pixels[y * pixelSize + x] = snakeBodyColor;
-
-                    float cx = x - half;
-                    float patternScale = 0.12f;
-                    int px = (int)(cx * patternScale);
-                    int py = (int)((y - half) * patternScale);
-                    if ((px + py) % 3 == 0 && Mathf.Abs(cx) < half * 0.7f)
-                    {
-                        float pd = Mathf.Abs(cx * 0.06f) + Mathf.Abs((y - half) * 0.12f);
-                        if (pd < 0.5f)
-                            pixels[y * pixelSize + x] = snakeBodyPatternColor;
-                    }
-
-                    if (cy > bodyHalfH - 3f)
-                        pixels[y * pixelSize + x] = Color.Lerp(snakeBodyColor, Color.white, 0.15f);
-                }
-                else
-                {
-                    pixels[y * pixelSize + x] = Color.clear;
-                }
-            }
-        }
-
-        tex.SetPixels(pixels);
-        tex.Apply();
-        File.WriteAllBytes(path + "SnakeBodyStraight.png", tex.EncodeToPNG());
-        Object.DestroyImmediate(tex);
-    }
-
-    private void GenerateBodyCorner(string path)
-    {
-        Texture2D tex = CreateTexture(pixelSize, pixelSize);
-        Color[] pixels = new Color[pixelSize * pixelSize];
-
-        int half = pixelSize / 2;
-        float bodyHalfW = pixelSize * 0.22f;
-        float outerR = half * 0.85f;
-        float innerR = outerR - bodyHalfW * 2f;
-
-        float cornerCX = -half * 0.15f;
-        float cornerCY = -half * 0.15f;
-
-        for (int y = 0; y < pixelSize; y++)
-        {
-            for (int x = 0; x < pixelSize; x++)
-            {
-                float cx = x - half - cornerCX;
-                float cy = y - half - cornerCY;
-                float dist = Mathf.Sqrt(cx * cx + cy * cy);
-
-                bool inPipe = (cx >= -1f && cy >= -1f) && (dist >= innerR && dist <= outerR);
-
-                if (inPipe)
-                {
-                    pixels[y * pixelSize + x] = snakeBodyColor;
-
-                    float t = Mathf.Atan2(cy, cx);
-                    float patternIdx = Mathf.Floor(t * 6f / Mathf.PI);
-                    if ((int)patternIdx % 2 == 0)
-                        pixels[y * pixelSize + x] = Color.Lerp(snakeBodyColor, snakeBodyPatternColor, 0.3f);
-                }
-                else
-                {
-                    pixels[y * pixelSize + x] = Color.clear;
-                }
-            }
-        }
-
-        tex.SetPixels(pixels);
-        tex.Apply();
-        File.WriteAllBytes(path + "SnakeBodyCorner.png", tex.EncodeToPNG());
-        Object.DestroyImmediate(tex);
-    }
-
-    private void GenerateSnakeTail(string path)
-    {
-        Texture2D tex = CreateTexture(pixelSize, pixelSize);
-        Color[] pixels = new Color[pixelSize * pixelSize];
-
-        int half = pixelSize / 2;
-        float tailBaseHalfH = pixelSize * 0.25f;
-        float tailTipX = half * 0.85f;
-
-        for (int y = 0; y < pixelSize; y++)
-        {
-            for (int x = 0; x < pixelSize; x++)
-            {
-                float cx = x - half;
-                float cy = y - half;
-
-                float maxH = Mathf.Lerp(tailBaseHalfH, 0f, (cx + half) / (tailTipX + half));
-                if (cx >= -half && cx <= tailTipX && Mathf.Abs(cy) <= maxH)
-                {
-                    pixels[y * pixelSize + x] = snakeBodyColor;
-
-                    if ((int)(cy * 3f / Mathf.Max(0.01f, maxH)) % 2 == 0 && cx < tailTipX - 4f)
-                        pixels[y * pixelSize + x] = Color.Lerp(snakeBodyColor, snakeBodyPatternColor, 0.2f);
-                }
-                else
-                {
-                    pixels[y * pixelSize + x] = Color.clear;
-                }
-            }
-        }
-
-        tex.SetPixels(pixels);
-        tex.Apply();
-        File.WriteAllBytes(path + "SnakeTail.png", tex.EncodeToPNG());
         Object.DestroyImmediate(tex);
     }
 
