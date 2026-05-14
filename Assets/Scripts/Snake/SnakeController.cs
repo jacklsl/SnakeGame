@@ -31,13 +31,14 @@ public class SnakeController : MonoBehaviour
 
     private void Awake()
     {
-        gridManager = GameServices.Get<GridManager>();
-        ApplyConfig();
-        EnsureDefaults();
+        GameServices.Register(this);
     }
 
     private void Start()
     {
+        gridManager = GameServices.Get<GridManager>();
+        ApplyConfig();
+        EnsureDefaults();
         InitializeSnake();
     }
 
@@ -219,6 +220,7 @@ public class SnakeController : MonoBehaviour
 
     private void OnDestroy()
     {
+        GameServices.Unregister<SnakeController>();
         foreach (var seg in segments)
         {
             if (seg != null && seg.gameObject != null)

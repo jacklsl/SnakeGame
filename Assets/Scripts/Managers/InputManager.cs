@@ -13,7 +13,7 @@ public class InputManager : MonoBehaviour
     private bool isTouchInput;
     private readonly float minSwipeDistance = 50f;
 
-    private void Awake()
+    private void Start()
     {
         snakeController = GameServices.Get<SnakeController>();
         gameManager = GameServices.Get<GameManager>();

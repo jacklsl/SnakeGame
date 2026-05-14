@@ -22,8 +22,14 @@ public class GridManager : MonoBehaviour
 
     private void Awake()
     {
+        GameServices.Register(this);
         occupiedCells = new bool[gridWidth, gridHeight];
         originPosition = new Vector2(-gridWidth * cellSize / 2f, -gridHeight * cellSize / 2f);
+    }
+
+    private void OnDestroy()
+    {
+        GameServices.Unregister<GridManager>();
     }
 
     private void Start()

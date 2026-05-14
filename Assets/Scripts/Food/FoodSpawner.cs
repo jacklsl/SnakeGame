@@ -18,13 +18,14 @@ public class FoodSpawner : MonoBehaviour
 
     private void Awake()
     {
-        gridManager = GameServices.Get<GridManager>();
-        snakeController = GameServices.Get<SnakeController>();
+        GameServices.Register(this);
         EnsureDefaults();
     }
 
     private void Start()
     {
+        gridManager = GameServices.Get<GridManager>();
+        snakeController = GameServices.Get<SnakeController>();
         if (GameServices.Get<GameManager>() == null)
             Invoke(nameof(SpawnFood), 0f);
     }
@@ -122,5 +123,10 @@ public class FoodSpawner : MonoBehaviour
             renderer.sprite = foodSprite;
             foodPrefab.AddComponent<SnakeSegment>();
         }
+    }
+
+    private void OnDestroy()
+    {
+        GameServices.Unregister<FoodSpawner>();
     }
 }

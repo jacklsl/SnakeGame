@@ -16,26 +16,29 @@ public static class SnakeGameBootstrap
         if (config == null)
             config = ScriptableObject.CreateInstance<GameConfig>();
 
-        // 按依赖顺序添加组件
-        GridManager gridManager = EnsureComponent<GridManager>(root);
-        InjectConfig(gridManager, config);
-
-        SnakeController snakeController = EnsureComponent<SnakeController>(root);
-        InjectConfig(snakeController, config);
-
-        FoodSpawner foodSpawner = EnsureComponent<FoodSpawner>(root);
-        InjectConfig(foodSpawner, config);
-
-        EnsureComponent<ScoreManager>(root);
-        EnsureComponent<GameManager>(root);
-        EnsureComponent<InputManager>(root);
-        EnsureComponent<UIManager>(root);
+        // 按依赖顺序添加组件并注册到 GameServices
+        GridManager gridManager = EnsureAndRegister<GridManager>(root, config);
+        SnakeController snakeController = EnsureAndRegister<SnakeController>(root, config);
+        FoodSpawner foodSpawner = EnsureAndRegister<FoodSpawner>(root, config);
+        EnsureAndRegister<ScoreManager>(root);
+        EnsureAndRegister<GameManager>(root);
+        EnsureAndRegister<InputManager>(root);
+        EnsureAndRegister<UIManager>(root);
 
         // GridManager 渲染子组件
         if (root.GetComponent<GridBackgroundRenderer>() == null)
             root.AddComponent<GridBackgroundRenderer>();
         if (root.GetComponent<GridWallRenderer>() == null)
             root.AddComponent<GridWallRenderer>();
+    }
+
+    private static T EnsureAndRegister<T>(GameObject root, GameConfig config = null) where T : Component
+    {
+        T component = EnsureComponent<T>(root);
+        GameServices.Register(component);
+        if (config != null)
+            InjectConfig(component, config);
+        return component;
     }
 
     private static void InjectConfig<T>(T component, GameConfig config) where T : Component
