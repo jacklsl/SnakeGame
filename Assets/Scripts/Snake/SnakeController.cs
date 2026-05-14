@@ -16,7 +16,9 @@ public class SnakeController : MonoBehaviour
 
     [Header("Sprites")]
     [SerializeField] private Sprite headSprite;
-    [SerializeField] private Sprite bodySprite;
+    [SerializeField] private Sprite bodyStraightSprite;
+    [SerializeField] private Sprite bodyCornerSprite;
+    [SerializeField] private Sprite tailSprite;
 
     private GridManager gridManager;
     private SnakeMovement movement = new SnakeMovement();
@@ -82,7 +84,6 @@ public class SnakeController : MonoBehaviour
         headObj.SetActive(true);
         SnakeSegment headSegment = headObj.GetComponent<SnakeSegment>();
         headSegment.GridPosition = new Vector2Int(startX, startY);
-        headSegment.SetSprite(headSprite);
         headSegment.SetSortingOrder(10);
         headSegment.FitToCell(gridManager.CellSize);
         segments.Add(headSegment);
@@ -94,13 +95,13 @@ public class SnakeController : MonoBehaviour
             bodyObj.SetActive(true);
             SnakeSegment bodySegment = bodyObj.GetComponent<SnakeSegment>();
             bodySegment.GridPosition = new Vector2Int(startX - i, startY);
-            bodySegment.SetSprite(bodySprite);
             bodySegment.SetSortingOrder(Mathf.Max(1, 10 - i));
             bodySegment.FitToCell(gridManager.CellSize);
             segments.Add(bodySegment);
         }
 
         UpdateSegmentPositions();
+        UpdateSegmentVisuals();
         RefreshAllOccupiedCells();
         lastTailPos = segments[segments.Count - 1].GridPosition;
     }
@@ -142,7 +143,68 @@ public class SnakeController : MonoBehaviour
         segments[0].GridPosition = newHeadPos;
 
         UpdateSegmentPositions();
+        UpdateSegmentVisuals();
         UpdateOccupiedCells();
+    }
+
+    private void UpdateSegmentVisuals()
+    {
+        if (segments.Count == 0) return;
+
+        // Head: faces the movement direction
+        segments[0].SetSprite(headSprite);
+        segments[0].SetRotation(DirectionToAngle(movement.CurrentDirection));
+
+        // Tail (if more than 1 segment): faces toward body[count-2]
+        if (segments.Count >= 2)
+        {
+            int tailIdx = segments.Count - 1;
+            Vector2Int tailDir = segments[tailIdx - 1].GridPosition - segments[tailIdx].GridPosition;
+            segments[tailIdx].SetSprite(tailSprite);
+            segments[tailIdx].SetRotation(DirectionToAngle(tailDir));
+        }
+
+        // Body segments (indices 1..count-2): determine straight or corner
+        for (int i = 1; i < segments.Count - 1; i++)
+        {
+            Vector2Int dirToHead = segments[i - 1].GridPosition - segments[i].GridPosition;
+            Vector2Int dirToTail = segments[i + 1].GridPosition - segments[i].GridPosition;
+
+            if (dirToHead == -dirToTail)
+            {
+                segments[i].SetSprite(bodyStraightSprite);
+                segments[i].SetRotation(GetStraightAngle(dirToHead));
+            }
+            else
+            {
+                segments[i].SetSprite(bodyCornerSprite);
+                segments[i].SetRotation(GetCornerAngle(dirToHead, dirToTail));
+            }
+        }
+    }
+
+    private float DirectionToAngle(Vector2Int dir)
+    {
+        if (dir == Vector2Int.right)  return 0f;
+        if (dir == Vector2Int.up)     return 90f;
+        if (dir == Vector2Int.left)   return 180f;
+        if (dir == Vector2Int.down)   return 270f;
+        return 0f;
+    }
+
+    private float GetStraightAngle(Vector2Int dir)
+    {
+        return (dir.x != 0) ? 0f : 90f;
+    }
+
+    private float GetCornerAngle(Vector2Int d1, Vector2Int d2)
+    {
+        Vector2Int sum = d1 + d2;
+        if (sum.x > 0 && sum.y > 0)  return 0f;
+        if (sum.x < 0 && sum.y > 0)  return 90f;
+        if (sum.x < 0 && sum.y < 0)  return 180f;
+        if (sum.x > 0 && sum.y < 0)  return 270f;
+        return 0f;
     }
 
     public void Grow()
@@ -153,12 +215,12 @@ public class SnakeController : MonoBehaviour
         bodyObj.SetActive(true);
         SnakeSegment bodySegment = bodyObj.GetComponent<SnakeSegment>();
         bodySegment.GridPosition = tailPos;
-        bodySegment.SetSprite(bodySprite);
         bodySegment.SetSortingOrder(Mathf.Max(1, 10 - segments.Count));
         bodySegment.FitToCell(gridManager.CellSize);
         segments.Add(bodySegment);
 
         UpdateSegmentPositions();
+        UpdateSegmentVisuals();
         RefreshAllOccupiedCells();
         lastTailPos = tailPos;
 
@@ -209,13 +271,17 @@ public class SnakeController : MonoBehaviour
     {
         if (headSprite == null)
             headSprite = SnakeSpriteLoader.LoadSprite("Assets/snakesprites/png/snake_yellow_head_64.png");
-        if (bodySprite == null)
-            bodySprite = SnakeSpriteLoader.LoadSprite("Assets/snakesprites/png/snake_yellow_blob_64.png");
+        if (bodyStraightSprite == null)
+            bodyStraightSprite = SnakeSpriteLoader.LoadSprite("Assets/Sprites/Generated/SnakeBodyStraight.png");
+        if (bodyCornerSprite == null)
+            bodyCornerSprite = SnakeSpriteLoader.LoadSprite("Assets/Sprites/Generated/SnakeBodyCorner.png");
+        if (tailSprite == null)
+            tailSprite = SnakeSpriteLoader.LoadSprite("Assets/Sprites/Generated/SnakeTail.png");
 
         if (headPrefab == null)
             headPrefab = CreateSegmentPrefab("Snake Head Prefab", headSprite);
         if (bodyPrefab == null)
-            bodyPrefab = CreateSegmentPrefab("Snake Body Prefab", bodySprite);
+            bodyPrefab = CreateSegmentPrefab("Snake Body Prefab", bodyStraightSprite);
     }
 
     private void OnDestroy()
