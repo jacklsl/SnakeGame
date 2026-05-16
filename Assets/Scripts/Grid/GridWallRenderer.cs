@@ -63,7 +63,9 @@ public class GridWallRenderer : MonoBehaviour
         wallPrefab = new GameObject("Wall Prefab");
         wallPrefab.SetActive(false);
         SpriteRenderer renderer = wallPrefab.AddComponent<SpriteRenderer>();
-        renderer.sprite = SnakeSpriteLoader.LoadSprite("Assets/snakesprites/png/wall_block_64_0.png");
+        GameConfig config = GameServices.Get<GameConfig>();
+        string wallSpritePath = config != null ? config.WallSpritePath : "Assets/snakesprites/png/wall_block_64_0.png";
+        renderer.sprite = SnakeSpriteLoader.LoadSprite(wallSpritePath);
         renderer.sortingOrder = 2;
     }
 }

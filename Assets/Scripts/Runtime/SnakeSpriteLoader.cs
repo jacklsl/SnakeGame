@@ -19,7 +19,7 @@ public static class SnakeSpriteLoader
 
     /// <summary>
     /// 加载精灵 - 编辑器下使用 AssetDatabase，构建版本使用 Resources.Load
-    /// 所有精灵资源应放在 Assets/Resources/Sprites/ 文件夹下
+    /// 构建版本会从 Assets/Resources/ 下按原资源路径加载
     /// </summary>
     /// <param name="assetPath">精灵资源路径（编辑器路径如 Assets/snakesprites/png/xxx.png）</param>
     /// <param name="subSpriteName">子精灵名称（用于 Multiple 模式的精灵图）</param>
@@ -35,48 +35,21 @@ public static class SnakeSpriteLoader
         Sprite loadedSprite = null;
 
 #if UNITY_EDITOR
-        if (!string.IsNullOrEmpty(subSpriteName))
+        loadedSprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+        if (loadedSprite == null || !string.IsNullOrEmpty(subSpriteName))
         {
-            // 加载所有精灵并查找匹配的子精灵
-            Sprite[] sprites = AssetDatabase.LoadAllAssetRepresentationsAtPath(assetPath) as Sprite[];
-            if (sprites != null)
-            {
-                foreach (Sprite sprite in sprites)
-                {
-                    if (sprite.name == subSpriteName)
-                    {
-                        loadedSprite = sprite;
-                        break;
-                    }
-                }
-            }
-        }
-        else
-        {
-            loadedSprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+            loadedSprite = PickSprite(AssetDatabase.LoadAllAssetRepresentationsAtPath(assetPath), subSpriteName);
         }
 #else
         // 构建版本：从 Resources 文件夹加载
         // 将 Assets/snakesprites/png/xxx.png 转换为 Resources 路径
-        // 假设精灵已复制到 Assets/Resources/Sprites/ 下
+        // 假设精灵已复制到 Assets/Resources/ 下对应路径
         string resourcesPath = GetResourcesPath(assetPath);
         loadedSprite = Resources.Load<Sprite>(resourcesPath);
 
-        if (loadedSprite == null && !string.IsNullOrEmpty(subSpriteName))
+        if (loadedSprite == null || !string.IsNullOrEmpty(subSpriteName))
         {
-            // 尝试加载精灵图集
-            Sprite[] sprites = Resources.LoadAll<Sprite>(resourcesPath);
-            if (sprites != null)
-            {
-                foreach (Sprite sprite in sprites)
-                {
-                    if (sprite.name == subSpriteName)
-                    {
-                        loadedSprite = sprite;
-                        break;
-                    }
-                }
-            }
+            loadedSprite = PickSprite(Resources.LoadAll<Sprite>(resourcesPath), subSpriteName);
         }
 
         if (loadedSprite == null)
@@ -97,6 +70,28 @@ public static class SnakeSpriteLoader
         }
 
         return loadedSprite;
+    }
+
+    private static Sprite PickSprite(Object[] assets, string subSpriteName)
+    {
+        if (assets == null || assets.Length == 0)
+            return null;
+
+        Sprite firstSprite = null;
+        foreach (Object asset in assets)
+        {
+            Sprite sprite = asset as Sprite;
+            if (sprite == null)
+                continue;
+
+            if (firstSprite == null)
+                firstSprite = sprite;
+
+            if (!string.IsNullOrEmpty(subSpriteName) && sprite.name == subSpriteName)
+                return sprite;
+        }
+
+        return string.IsNullOrEmpty(subSpriteName) ? firstSprite : null;
     }
 
     /// <summary>

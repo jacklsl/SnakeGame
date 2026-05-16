@@ -208,9 +208,9 @@ public class SnakeController : MonoBehaviour
     private void EnsureDefaults()
     {
         if (headSprite == null)
-            headSprite = SnakeSpriteLoader.LoadSprite("Assets/snakesprites/png/snake_yellow_head_64.png");
+            headSprite = SnakeSpriteLoader.LoadSprite(config != null ? config.HeadSpritePath : "Assets/snakesprites/png/snake_yellow_head_64.png");
         if (bodySprite == null)
-            bodySprite = SnakeSpriteLoader.LoadSprite("Assets/snakesprites/png/snake_yellow_blob_64.png");
+            bodySprite = SnakeSpriteLoader.LoadSprite(config != null ? config.BodySpritePath : "Assets/snakesprites/png/snake_yellow_blob_64.png");
 
         if (headPrefab == null)
             headPrefab = CreateSegmentPrefab("Snake Head Prefab", headSprite);

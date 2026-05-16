@@ -8,6 +8,9 @@ public class FoodSpawner : MonoBehaviour
     [Header("Prefab")]
     [SerializeField] private GameObject foodPrefab;
 
+    [Header("Config")]
+    [SerializeField] private GameConfig config;
+
     [Header("Sprite")]
     [SerializeField] private Sprite foodSprite;
 
@@ -19,11 +22,11 @@ public class FoodSpawner : MonoBehaviour
     private void Awake()
     {
         GameServices.Register(this);
-        EnsureDefaults();
     }
 
     private void Start()
     {
+        EnsureDefaults();
         gridManager = GameServices.Get<GridManager>();
         snakeController = GameServices.Get<SnakeController>();
         if (GameServices.Get<GameManager>() == null)
@@ -85,16 +88,14 @@ public class FoodSpawner : MonoBehaviour
 
     public void EatFood()
     {
-        snakeController.Grow();
-
         if (currentFood != null)
         {
-            ClearFoodOccupied();
             Destroy(currentFood);
             currentFood = null;
             foodSegment = null;
         }
 
+        snakeController.Grow();
         SpawnFood();
     }
 
@@ -113,7 +114,7 @@ public class FoodSpawner : MonoBehaviour
     private void EnsureDefaults()
     {
         if (foodSprite == null)
-            foodSprite = SnakeSpriteLoader.LoadSprite("Assets/snakesprites/png/apple_red_64.png");
+            foodSprite = SnakeSpriteLoader.LoadSprite(config != null ? config.FoodSpritePath : "Assets/snakesprites/png/apple_red_64.png");
 
         if (foodPrefab == null)
         {

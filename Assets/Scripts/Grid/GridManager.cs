@@ -11,6 +11,7 @@ public class GridManager : MonoBehaviour
     [SerializeField] private int gridWidth = 20;
     [SerializeField] private int gridHeight = 20;
     [SerializeField] private float cellSize = 1f;
+    [SerializeField] private GameConfig config;
 
     private Vector2 originPosition;
     private bool[,] occupiedCells;
@@ -23,8 +24,29 @@ public class GridManager : MonoBehaviour
     private void Awake()
     {
         GameServices.Register(this);
+        InitializeGrid();
+    }
+
+    public void Configure(GameConfig gameConfig)
+    {
+        config = gameConfig;
+        InitializeGrid();
+    }
+
+    private void InitializeGrid()
+    {
+        ApplyConfig();
         occupiedCells = new bool[gridWidth, gridHeight];
         originPosition = new Vector2(-gridWidth * cellSize / 2f, -gridHeight * cellSize / 2f);
+    }
+
+    private void ApplyConfig()
+    {
+        if (config == null) return;
+
+        gridWidth = config.GridWidth;
+        gridHeight = config.GridHeight;
+        cellSize = config.CellSize;
     }
 
     private void OnDestroy()

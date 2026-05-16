@@ -1,5 +1,9 @@
 using UnityEngine;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 public static class SnakeGameBootstrap
 {
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -12,14 +16,14 @@ public static class SnakeGameBootstrap
             root = new GameObject("Snake Game Runtime");
 
         // 加载配置
-        GameConfig config = Resources.Load<GameConfig>("Config/GameConfig");
-        if (config == null)
-            config = ScriptableObject.CreateInstance<GameConfig>();
+        GameConfig config = LoadConfig();
+        GameServices.Register(config);
 
         // 按依赖顺序添加组件并注册到 GameServices
         GridManager gridManager = EnsureAndRegister<GridManager>(root, config);
-        SnakeController snakeController = EnsureAndRegister<SnakeController>(root, config);
-        FoodSpawner foodSpawner = EnsureAndRegister<FoodSpawner>(root, config);
+        gridManager.Configure(config);
+        EnsureAndRegister<SnakeController>(root, config);
+        EnsureAndRegister<FoodSpawner>(root, config);
         EnsureAndRegister<ScoreManager>(root);
         EnsureAndRegister<GameManager>(root);
         EnsureAndRegister<InputManager>(root);
@@ -30,6 +34,18 @@ public static class SnakeGameBootstrap
             root.AddComponent<GridBackgroundRenderer>();
         if (root.GetComponent<GridWallRenderer>() == null)
             root.AddComponent<GridWallRenderer>();
+    }
+
+    private static GameConfig LoadConfig()
+    {
+        GameConfig config = Resources.Load<GameConfig>("Config/GameConfig");
+
+#if UNITY_EDITOR
+        if (config == null)
+            config = AssetDatabase.LoadAssetAtPath<GameConfig>("Assets/Resources/Config/GameConfig.asset");
+#endif
+
+        return config != null ? config : ScriptableObject.CreateInstance<GameConfig>();
     }
 
     private static T EnsureAndRegister<T>(GameObject root, GameConfig config = null) where T : Component
