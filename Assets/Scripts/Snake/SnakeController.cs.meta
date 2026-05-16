@@ -1,2 +1,16 @@
 fileFormatVersion: 2
 guid: fc3e11f76760b682b8392cd2032a92e5
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - config: {fileID: 11400000, guid: ba2625200ae347685bee37a8b73338ca, type: 2}
+  - headPrefab: {instanceID: 0}
+  - bodyPrefab: {instanceID: 0}
+  - headSprite: {fileID: -7161596791689859360, guid: 2bd5e4d8d55aa92ea996558959ebb514, type: 3}
+  - bodySprite: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

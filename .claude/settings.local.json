@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//usr/bin/**)",
+      "Bash(touch /usr/local/bin/test_write)",
+      "Bash(rm /usr/local/bin/test_write)"
+    ]
+  }
+}
